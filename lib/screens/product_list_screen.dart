@@ -7,19 +7,21 @@ import 'package:parcialapp/screens/cart_screen.dart';
 import 'voice_cart_screen.dart';
 
 class ProductListScreen extends StatefulWidget {
-  const ProductListScreen({super.key});
+  const ProductListScreen({Key? key}) : super(key: key);
 
   @override
   State<ProductListScreen> createState() => _ProductListScreenState();
 }
 
 class _ProductListScreenState extends State<ProductListScreen> {
+  String _searchQuery = '';
+  bool _isSearchVisible = false;
+
   @override
   void initState() {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-
       context.read<ProductProvider>().loadProducts();
       context.read<CartProvider>().loadCart();
     });
@@ -29,8 +31,20 @@ class _ProductListScreenState extends State<ProductListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Productos'),
+        title: _isSearchVisible ? _buildSearchField() : const Text('Productos'),
         actions: [
+          IconButton(
+            icon: Icon(_isSearchVisible ? Icons.close : Icons.search),
+            tooltip: _isSearchVisible ? 'Cerrar búsqueda' : 'Buscar producto',
+            onPressed: () {
+              setState(() {
+                _isSearchVisible = !_isSearchVisible;
+                if (!_isSearchVisible) {
+                  _searchQuery = '';
+                }
+              });
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.mic),
             tooltip: 'Agregar por voz',
@@ -51,13 +65,24 @@ class _ProductListScreenState extends State<ProductListScreen> {
           if (prov.error != null) {
             return Center(child: Text('Error: ${prov.error}'));
           }
-          if (prov.products.isEmpty) {
+
+          final filteredProducts =
+              prov.products
+                  .where(
+                    (p) => p.name.toLowerCase().contains(
+                      _searchQuery.toLowerCase(),
+                    ),
+                  )
+                  .toList();
+
+          if (filteredProducts.isEmpty) {
             return const Center(child: Text('No hay productos'));
           }
+
           return ListView.builder(
-            itemCount: prov.products.length,
+            itemCount: filteredProducts.length,
             itemBuilder: (context, i) {
-              final p = prov.products[i];
+              final p = filteredProducts[i];
               return ListTile(
                 title: Text(p.name),
                 subtitle: Text(p.description),
@@ -73,6 +98,23 @@ class _ProductListScreenState extends State<ProductListScreen> {
           );
         },
       ),
+    );
+  }
+
+  Widget _buildSearchField() {
+    return TextField(
+      autofocus: true,
+      decoration: const InputDecoration(
+        hintText: 'Buscar producto...',
+        border: InputBorder.none,
+        hintStyle: TextStyle(color: Colors.grey, fontSize: 18),
+      ),
+      style: const TextStyle(color: Colors.black, fontSize: 18),
+      onChanged: (query) {
+        setState(() {
+          _searchQuery = query;
+        });
+      },
     );
   }
 }
