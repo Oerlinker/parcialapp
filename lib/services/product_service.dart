@@ -9,7 +9,8 @@ class ProductService {
   Future<List<Product>> fetchProducts() async {
     final res = await _api.get('/api/products/');
     if (res.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(res.body);
+      final body = utf8.decode(res.bodyBytes);
+      final List<dynamic> data = jsonDecode(body);
       return data.map((e) => Product.fromJson(e)).toList();
     } else {
       throw Exception('Error al cargar productos: ${res.statusCode}');
@@ -18,11 +19,11 @@ class ProductService {
   Future<Product> fetchById(int id) async {
     final res = await _api.get('/api/products/$id/');
     if (res.statusCode == 200) {
-      final data = jsonDecode(res.body);
+      final body = utf8.decode(res.bodyBytes);
+      final data = jsonDecode(body);
       return Product.fromJson(data);
     } else {
       throw Exception('Error al obtener producto $id');
     }
   }
-
 }
